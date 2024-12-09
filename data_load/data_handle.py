@@ -39,7 +39,8 @@ ethnicity_mapping = {
     "GreaterAfrican,Muslim": 0.2500,
     "Asian,IndianSubContinent": 0.1667,
     "Asian,GreaterEastAsian,Japanese": 0.0833,
-    "Asian,GreaterEastAsian,EastAsian": 0.0
+    "Asian,GreaterEastAsian,EastAsian": 0.0,
+    "nan": 0.4
 }
 
 def split_name(name):
@@ -70,11 +71,20 @@ scaler = MinMaxScaler()
 def probable_ethnicity(df):
     # CULTURAL ENCODING for Names using ethnicolr
     # Split the 'Name' column into first and last names
+    df['Name'] = df['Name'].fillna('Unknown')  # Fill NaN with a placeholder if needed
+
     df[['last_name', 'first_name']] = df['Name'].apply(split_name)
 
-    df = ethnicolr.pred_wiki_name(df, 'last_name', 'first_name', conf_int=0.9)
+    print(len(df))
+    df = ethnicolr.pred_wiki_name(df, 'last_name', 'first_name', conf_int=0.01)
+    print(len(df))
 
-    df['Ethnicity_Scaled'] = df['race'].map(ethnicity_mapping).fillna(0)
+    df['Ethnicity_Scaled'] = df['race'].map(ethnicity_mapping)
+    df['Ethnicity_Scaled'] = df['Ethnicity_Scaled'].fillna(0.4)
+    missing_ethnicities = df[df['Ethnicity_Scaled'].isna()]['race'].unique()
+    print("Missing ethnicities:", missing_ethnicities)
+
+    df['Ethnicity'] = df['Ethnicity_Scaled'].fillna(0.4)
 
     return df['Ethnicity_Scaled']
 
@@ -84,6 +94,7 @@ def encode_data(train_df, test_df):
     if test_df is None:
         df = train_df.copy()
     else:
+        print("NOW TESTING SET")
         df = test_df
 
     df = df.drop(columns=["PassengerId"])   # remove index
@@ -96,6 +107,8 @@ def encode_data(train_df, test_df):
     df = df.drop(columns=["last_name"])
     df = df.drop(columns=["first_name"])
     df = df.drop(columns=["__name"])
+
+    print(len(df))
 
     # EMBARKED
     # Calculate the survival rate for each embarkation point
@@ -112,6 +125,8 @@ def encode_data(train_df, test_df):
     # Handle NaN values if present (optional, you can assign a default value like 0)
     df['Embarked_scaled'] = df['Embarked_scaled'].fillna(df['Embarked_scaled'].mean())
     df = df.drop(columns=["Embarked"])
+
+    print(len(df))
 
     # SEX
     df['sex_binary'] = df['Sex'].map({'female': 1, 'male': 0}).fillna(0)
@@ -179,6 +194,8 @@ def encode_data(train_df, test_df):
     # df = df.drop(columns=['Ticket_Combined'])
     df = df.drop(columns=['Ticket_Digit_Length'])
 
+    print(len(df))
+
     # CABIN
     df['Cabin'] = df['Cabin'].str[0]
     df['Cabin_Scaled'] = df['Cabin'].map(deck_mapping)
@@ -188,10 +205,10 @@ def encode_data(train_df, test_df):
     if test_df is None:
         label = df['Survived']
         df = df.drop(columns=['Survived'])
-        df = pd.DataFrame(df.values)  # remove header
+        # df = pd.DataFrame(df.values)  # remove header
         return df, label
     else:
-        df = pd.DataFrame(df.values)   # remove header
+        # df = pd.DataFrame(df.values)   # remove header
         return df
 
 
@@ -207,9 +224,9 @@ def data_loader(train_path, test_path, save=True):
 
     path = './data/'
     if save:
-        X_train.to_csv(path+"train_encoded.csv", index=False, header=False)
-        X_test.to_csv(path+"test_encoded.csv", index=False, header=False)
-        y_train.to_csv(path+"train_labels.csv", index=False, header=False)
+        X_train.to_csv(path+"train_encoded.csv", index=False)
+        X_test.to_csv(path+"test_encoded.csv", index=False)
+        y_train.to_csv(path+"train_labels.csv", index=False)
 
     return X_train, X_test, y_train
 

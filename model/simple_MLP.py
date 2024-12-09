@@ -66,6 +66,7 @@ def train_balanced_mlp(X_train, y_train, X_test, y_test=None):
         return accuracy, classification_rep
     else:
         # Return predictions if no labels are available for the test set
+        print(predictions)
         return predictions
 
 def titanic_MLP(X_train, X_test, y_train, y_test):
