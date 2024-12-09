@@ -1,16 +1,11 @@
-import pandas as pd
-
-from data_load import preprocess
+from data_load import data_handle
+from model import simple_MLP
 
 
 train_file = 'data/train.csv'
+test_file = 'data/test.csv'
 
-x, y = preprocess.encode_training_data(train_file)
-
-
-
-
-
+X_train, X_test, y_train = data_handle.data_loader(train_file, test_file, save=True)
 
 
 
